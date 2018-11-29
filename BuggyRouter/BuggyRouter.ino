@@ -8,10 +8,7 @@
 #define TX_ADDRESS (((ROUTER_ID - 1) % 5) + 1)
 #define BUGGY_RX_ADDRESS 0
 #define ROUTER_RX_ADDRESS (ROUTER_ID % 5 + 1)
-
-const uint8_t buggy_rx_address BUGGY_RX_ADDRESS;
-const uint8_t tx_address TX_ADDRESS;
-const uint8_t router_rx_address ROUTER_RX_ADDRESS;
+uint8_t addresses[][6] = {"0Node", "1Node", "2Node", "3Node", "4Node", "5Node"};
 
 RF24 radio(7, 8); // CE, CSN
 
@@ -20,8 +17,9 @@ uint32_t LATEST_SEQ_NUM = 0;
 void setup() 
 {
   radio.begin();
-  radio.openReadingPipe(1, &buggy_rx_address);
-  radio.openReadingPipe(2, &router_rx_address);
+  //Note: Pipe 0 is also used by the writing pipe
+  radio.openReadingPipe(1, addresses[BUGGY_RX_ADDRESS]);
+  radio.openReadingPipe(2, addresses[ROUTER_RX_ADDRESS]);
   radio.setPALevel(RF24_PA_MIN);
   //Higher channels are less prone to interference
   //http://arduinoinfo.mywikis.net/wiki/Nrf24L01-2.4GHz-HowTo
@@ -59,7 +57,7 @@ void loop()
         #else
           //Switch from receiver to transmitter
           radio.stopListening();
-          radio.openWritingPipe(&tx_address);
+          radio.openWritingPipe(addresses[TX_ADDRESS]);
           
           radio.write(&seq_num, sizeof(uint32_t));
           radio.write(&msg_id, sizeof(uint8_t));

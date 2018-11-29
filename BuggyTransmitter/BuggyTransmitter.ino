@@ -3,14 +3,17 @@
 #include <RF24.h>
 #include <RF24_config.h>
 
+#define TX_ADDRESS 0
+
 RF24 radio(7, 8); // CE, CSN
 uint32_t SEQ_NUM = 0;
 uint8_t TEST_HEADER = 42;
-const uint8_t address = 0;
+uint8_t addresses[][6] = {"0Node", "1Node", "2Node", "3Node", "4Node", "5Node"};
+
 
 void setup() {
   radio.begin();
-  radio.openWritingPipe(address);
+  radio.openWritingPipe(addresses[TX_ADDRESS]);
   radio.setPALevel(RF24_PA_MIN);
   //Higher channels are less prone to interference
   //http://arduinoinfo.mywikis.net/wiki/Nrf24L01-2.4GHz-HowTo
