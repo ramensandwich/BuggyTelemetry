@@ -19,6 +19,7 @@ void setup() {
   //http://arduinoinfo.mywikis.net/wiki/Nrf24L01-2.4GHz-HowTo
   radio.setChannel(75);
   radio.stopListening();
+  Serial.begin(9600);
 }
 void loop() {
   //We're multicasting, so we don't want ACKs from all of our receivers
@@ -27,7 +28,8 @@ void loop() {
   radio.write(&TEST_HEADER, sizeof(uint8_t), true);
   uint32_t payload = 0;
   radio.write(&payload, sizeof(uint32_t), true);
-
+  Serial.print("Send: ");
+  Serial.println(SEQ_NUM);
   SEQ_NUM++;
   delay(1000);
 }

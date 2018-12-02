@@ -3,6 +3,7 @@
 #include <RF24.h>
 #include <RF24_config.h>
 
+#define RETRY_LIMIT 5
 //CHANGE THE BELOW LINE TO IDENTIFY ROUTER
 #define ROUTER_ID 1
 #define TX_ADDRESS (((ROUTER_ID - 1) % 5) + 1)
@@ -27,7 +28,7 @@ void setup()
   radio.startListening();
 
   #if ROUTER_ID == 1
-    Serial.begin(115200);
+    Serial.begin(9600);
   #endif
 }
 
@@ -35,13 +36,32 @@ void loop()
 {
     while (radio.available())
     {
+      //These are default values
       uint32_t seq_num = 0;
       uint8_t msg_id = 0;
       uint32_t msg_data = 0;
       //TODO: Error checking to verify that the correct number of bytes were read
-      radio.read(&seq_num, sizeof(uint32_t));\
-      radio.read(&msg_id, sizeof(uint8_t));
-      radio.read(&msg_data, sizeof(uint32_t));
+
+      //TODO: Verify latency of spin-waiting for all the information to come in
+      uint8_t retry_count = 0;
+      while (radio.available() && retry_count < RETRY_LIMIT && seq_num == 0)
+      {
+        radio.read(&seq_num, sizeof(uint32_t));
+        retry_count++;
+      }
+      retry_count = 0;
+      while (radio.available() && retry_count < RETRY_LIMIT && msg_id == 0)
+      {
+        radio.read(&msg_id, sizeof(uint8_t)); 
+        retry_count++;
+      }
+      retry_count = 0;
+      while (radio.available() && retry_count < RETRY_LIMIT && msg_data == 0)
+      {
+        radio.read(&msg_data, sizeof(uint32_t));
+        retry_count++;
+      }
+      
       if (seq_num > LATEST_SEQ_NUM) 
       {
         //This is the latest message and we should process it
@@ -53,7 +73,7 @@ void loop()
           Serial.print(" data: ");
           Serial.print(msg_id);
           Serial.print(" msg_id: ");
-          Serial.print(msg_data);
+          Serial.println(msg_data);
         #else
           //Switch from receiver to transmitter
           radio.stopListening();
