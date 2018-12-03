@@ -9,19 +9,18 @@ serialPort = serial.Serial('COM7', 9600, timeout=0)
 packetsReceived = 0
 tStart = datetime.datetime.now()
 
+time.sleep(1)
+
 while True:
     try:
         serialPort.readline()
         packetsReceived += 1
     except serialPort.SerialTimeoutException:
+        pass
 
     tDelta = datetime.datetime.now() - tStart
-
+    print(tDelta.microseconds)
     #8 bits per byte, 4 bytes per packet
     bitsReceived = 8 * 4 * packetsReceived
-    dataRate = (float)bitsReceived / (float)tDelta.seconds
+    dataRate = float(bitsReceived) / (float(tDelta.microseconds) / 1000.0)
     print("Bandwidth: {0} bps".format(dataRate))
-
-    #Sleep for 50 milliseconds to avoid checking too often
-    #Assuming sender is sending at about 10Hz
-    time.sleep(0.05)

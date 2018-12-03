@@ -14,6 +14,8 @@ uint8_t addresses[][6] = {"0Node", "1Node", "2Node", "3Node", "4Node", "5Node"};
 RF24 radio(7, 8); // CE, CSN
 
 uint32_t LATEST_SEQ_NUM = 0;
+uint32_t tStart = millis();
+uint32_t packet_count = 0;
 
 void setup() 
 {
@@ -28,7 +30,7 @@ void setup()
   radio.startListening();
 
   #if ROUTER_ID == 1
-    Serial.begin(9600);
+    Serial.begin(115200);
   #endif
 }
 
@@ -42,38 +44,31 @@ void loop()
       uint32_t msg_data = 0;
       //TODO: Error checking to verify that the correct number of bytes were read
 
-      //TODO: Verify latency of spin-waiting for all the information to come in
-      uint8_t retry_count = 0;
-      while (radio.available() && retry_count < RETRY_LIMIT && seq_num == 0)
-      {
-        radio.read(&seq_num, sizeof(uint32_t));
-        retry_count++;
-      }
-      retry_count = 0;
-      while (radio.available() && retry_count < RETRY_LIMIT && msg_id == 0)
-      {
-        radio.read(&msg_id, sizeof(uint8_t)); 
-        retry_count++;
-      }
-      retry_count = 0;
-      while (radio.available() && retry_count < RETRY_LIMIT && msg_data == 0)
-      {
-        radio.read(&msg_data, sizeof(uint32_t));
-        retry_count++;
-      }
+      radio.read(&seq_num, sizeof(uint32_t));
+      while (!radio.available());
+      radio.read(&msg_id, sizeof(uint8_t));
+      while (!radio.available()); 
+      radio.read(&msg_data, sizeof(uint32_t));
       
       if (seq_num > LATEST_SEQ_NUM) 
       {
+        LATEST_SEQ_NUM = seq_num;
+        packet_count++;
+        uint32_t tDelta = millis() - tStart;
+        float tDeltaSec = (float)tDelta / 1000;
+        float bandwidth = packet_count * 4 * 8 / tDeltaSec;
         //This is the latest message and we should process it
         //otherwise we'll just skip it
         #if ROUTER_ID == 1 
         //Base router only needs to listen and print to console
           Serial.print("Seq num: ");
           Serial.print(seq_num);
-          Serial.print(" data: ");
+          Serial.print(" id: ");
           Serial.print(msg_id);
-          Serial.print(" msg_id: ");
-          Serial.println(msg_data);
+          Serial.print(" data: ");
+          Serial.print(msg_data);
+          Serial.print(" Bandwidth: ");
+          Serial.println(bandwidth);
         #else
           //Switch from receiver to transmitter
           radio.stopListening();

@@ -12,4 +12,4 @@ while True:
         print("\n\n\n")
     except serialPort.SerialTimeoutException:
         print('Data could not be read')
-    time.sleep(1)
+    time.sleep(0.5)
