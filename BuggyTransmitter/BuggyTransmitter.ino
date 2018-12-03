@@ -9,8 +9,6 @@ RF24 radio(7, 8); // CE, CSN
 uint32_t SEQ_NUM = 0;
 uint8_t TEST_HEADER = 42;
 uint8_t addresses[][6] = {"0Node", "1Node", "2Node", "3Node", "4Node", "5Node"};
-uint8_t buf[10];
-
 
 void setup() {
   radio.begin();
@@ -25,16 +23,23 @@ void setup() {
 void loop() {
   //We're multicasting, so we don't want ACKs from all of our receivers
   //TODO: Determine if our receivers are in range to interfere and if we want ACKs or not
-//  memcpy(buf, &SEQ_NUM, sizeof(uint32_t));
-//  memcpy(&(buf[4]), &TEST_HEADER, sizeof(uint8_t));
-//  memcpy(&(buf[5]), &payload, sizeof(uint32_t));
+
+  //We want the loop to run at 10Hz
+  uint32_t loop_end = millis() + 100;
+
+  transmit_data(TEST_HEADER, 0);
+  transmit_data(43, 10);
+  transmit_data(44, 99);
+  transmit_data(51, 573489);
+
+  //Limit the loop to run at 10Hz
+  while (millis() < loop_end) {}
+}
+
+void transmit_data(uint8_t header, uint32_t data)
+{
   radio.write(&SEQ_NUM, sizeof(uint32_t));
-  radio.write(&TEST_HEADER, sizeof(uint8_t));
-  uint32_t payload = 0;
-  radio.write(&payload, sizeof(uint32_t));
-//  radio.write(buf,sizeof(buf), true); 
-  Serial.print("Send: ");
-  Serial.println(SEQ_NUM);
   SEQ_NUM++;
-  delay(10);
+  radio.write(&header, sizeof(uint8_t));
+  radio.write(&data, sizeof(uint32_t));
 }
