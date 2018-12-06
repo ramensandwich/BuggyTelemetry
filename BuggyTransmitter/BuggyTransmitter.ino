@@ -16,6 +16,7 @@ void setup() {
   radio.setPALevel(RF24_PA_MIN);
   //Higher channels are less prone to interference
   //http://arduinoinfo.mywikis.net/wiki/Nrf24L01-2.4GHz-HowTo
+  radio.setDataRate(RF24_250KBPS);
   radio.setChannel(75);
   radio.stopListening();
   Serial.begin(115200);
@@ -33,7 +34,7 @@ void loop() {
   transmit_data(51, 573489);
 
   //Limit the loop to run at 10Hz
-  while (millis() < loop_end) {}
+  //while (millis() < loop_end) {}
 }
 
 void transmit_data(uint8_t header, uint32_t data)
